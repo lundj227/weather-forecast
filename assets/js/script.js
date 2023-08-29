@@ -1,0 +1,1 @@
+var APIKey = '77474d0ff5f19ebba232a4c922f3b44b'; // variable for the API key
