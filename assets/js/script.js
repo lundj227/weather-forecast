@@ -12,6 +12,7 @@ var wind;
 var cityNameFromServer;
 var humidity;
 var currentConditionsDiv = document.querySelector('#current-conditions');
+var futureConditionsDiv = document.querySelector('#future-conditions');
 
 function formatUnixTime(unixTimestamp) {
     const date = new Date(unixTimestamp * 1000); // Convert to milliseconds
@@ -43,15 +44,15 @@ function getFutureWeather(){
         return response.json();
     })
     .then(function(data){
-        
+        futureConditionsDiv.innerHTML = '';
         cityNameFromServer = data.city.name // gets the name
         console.log(cityNameFromServer);
         console.log(data);
 
         var containerDiv = document.createElement('div'); // Create a container div
-
+        var futureWeathercard = document.createElement('div');
         // Gets the date, temp, wind, and humidity of a city
-        for(var i = 0; i < 40; i += 8){ // gets the next five days at midnight
+        for(var i = 8; i < 40; i += 8){ // gets the next five days at midnight
             
             // Save the date as a variable and format it
             date = formatUnixTime(data.list[i].dt); 
@@ -69,9 +70,30 @@ function getFutureWeather(){
             // Save the humidity data as a variable and format it
             humidity = data.list[i].main.humidity + '%';
             //console.log(humidity);
-        }
-        
+
+            // Create the cards for forecasted weather 
+            //var futureWeathercard = document.createElement('div');
+            futureWeathercard = document.createElement('div');
+            futureWeathercard.classList.add('future-weather-card');
+            futureWeathercard.innerHTML = `<p> ${date} <br>Temp: ${tempF}<br>Wind: ${wind}<br>Humidity: ${humidity}<br>`
+            futureConditionsDiv.appendChild(futureWeathercard);
+        }        
         // Now outside for loop
+        // Save the date as a variable and format it
+        var dateLast = formatUnixTime(data.list[38].dt); 
+        
+        var tempFLast = data.list[38].main.temp;
+        tempFLast = tempF + " °F" ;
+        
+        // Save the wind data as a variable and format it
+        var windLast = data.list[38].wind.speed + ' MPH';
+        // Save the humidity data as a variable and format it
+        var humidityLast = data.list[38].main.humidity + '%';
+        // For whatever reason it did not want to create all 5 future days so the last one I created manually
+        futureWeathercard = document.createElement('div');
+        futureWeathercard.classList.add('future-weather-card');
+        futureWeathercard.innerHTML = `<p> ${dateLast} <br>Temp: ${tempFLast}<br>Wind: ${windLast}<br>Humidity: ${humidityLast}<br>`
+        futureConditionsDiv.appendChild(futureWeathercard);
     })
 };
 
