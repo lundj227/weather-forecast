@@ -6,12 +6,20 @@ var weatherQueryURL = 'api.openweathermap.org/data/2.5/forecast?lat='+ `${lat}` 
 var coordinatesQueryURL = 'https://api.openweathermap.org/geo/1.0/direct?q=' + city + '&appid=' + APIKey;
 var lat;
 var lon;
-var tempK;
 var tempF;
 var date;
 var wind;
 var cityNameFromServer;
 var humidity;
+var currentConditionsDiv = document.querySelector('#current-conditions');
+
+function formatUnixTime(unixTimestamp) {
+    const date = new Date(unixTimestamp * 1000); // Convert to milliseconds
+    const month = date.getMonth() + 1; // Months are zero-based, so add 1
+    const day = date.getDate();
+    const year = date.getFullYear();
+    return `${month}/${day}/${year}`;
+}
 
 function getCoordinates(){
     city = cityInput.value;
@@ -22,51 +30,87 @@ function getCoordinates(){
         .then(function (data){
             lat = data[0].lat;
             lon = data[0].lon;
-            
         })
         .then(function(){
-            weatherQueryURL = 'https://api.openweathermap.org/data/2.5/forecast?lat='+ `${lat}` + '&lon=' + `${lon}` + '&appid=' +  `${APIKey}`;
-            getWeather();
+            weatherQueryURL = 'https://api.openweathermap.org/data/2.5/forecast?lat='+ `${lat}` + '&lon=' + `${lon}` + '&appid=' +  `${APIKey}` + '&units=imperial';
+            getFutureWeather();
         });
 }
 
-function getWeather(){
+function getFutureWeather(){
     fetch(weatherQueryURL)
     .then(function (response) {
         return response.json();
     })
     .then(function(data){
-        console.log(data);
-        // Save the city name from the server as a variable
+        
         cityNameFromServer = data.city.name // gets the name
-        console.log(cityNameFromServer); // logs name 
+        console.log(cityNameFromServer);
+        console.log(data);
+
+        var containerDiv = document.createElement('div'); // Create a container div
+
         // Gets the date, temp, wind, and humidity of a city
         for(var i = 0; i < 40; i += 8){ // gets the next five days at midnight
             
             // Save the date as a variable and format it
-            date = data.list[i].dt_txt; 
-            console.log(date); 
+            date = formatUnixTime(data.list[i].dt); 
+            //console.log(date); 
 
             // Save the temperature as a variable and format it
-            tempK = data.list[i].main.temp;
-            tempF = (tempK - 273.15)*(9/5) + 32; // convert from kelvin to farienheight 
-            tempF = tempF.toFixed(2);
+            tempF = data.list[i].main.temp;
             tempF = tempF + " °F" ;
-            console.log(tempK, tempF);
+            //console.log(tempF);
 
             // Save the wind data as a variable and format it
             wind = data.list[i].wind.speed + ' MPH';
-            console.log(wind);
+            //console.log(wind);
 
             // Save the humidity data as a variable and format it
             humidity = data.list[i].main.humidity + '%';
-            console.log(humidity);
+            //console.log(humidity);
         }
+        
+        // Now outside for loop
     })
 };
 
 
+function getCurrentWeather() {
+    var pEl = document.createElement('p');
+    pEl.innerHTML = '';
+    fetch('https://api.openweathermap.org/data/2.5/weather?q=' + city + '&appid=' + APIKey + '&units=imperial')
+        .then(function(response){
+            return response.json();
+        })
+        .then(function(data){
+            console.log(data);
+
+            // Extract relevant data from the response
+            var tempF = data.main.temp + " °F";
+            var wind = data.wind.speed + ' MPH';
+            var humidity = data.main.humidity + '%';
+
+            // Create a container div
+            var containerDiv = document.createElement('div');
+
+            // Create a paragraph to display current conditions
+            var pEl = document.createElement('p');
+            pEl.innerHTML = `${data.name} ${formatUnixTime(data.dt)}<br>Temp: ${tempF}<br>Wind: ${wind}<br>Humidity: ${humidity}<br>`;
+            containerDiv.appendChild(pEl);
+
+            // Clear existing content and add the new containerDiv
+            currentConditionsDiv.innerHTML = '';
+            currentConditionsDiv.appendChild(containerDiv);
+        })
+        .catch(function(error) {
+            console.log('Error:', error);
+        });
+}
+
 searchBtn.addEventListener('click', function(e){
     e.preventDefault();
-    getCoordinates();
+    city = cityInput.value;
+    getCurrentWeather();
+    getCoordinates(); 
 });
