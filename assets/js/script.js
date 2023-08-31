@@ -43,22 +43,22 @@ function getWeather(){
         // Gets the date, temp, wind, and humidity of a city
         for(var i = 0; i < 40; i += 8){ // gets the next five days at midnight
             
-            // Save the date as a variable
+            // Save the date as a variable and format it
             date = data.list[i].dt_txt; 
             console.log(date); 
 
-            // Save the temperature as a variable
+            // Save the temperature as a variable and format it
             tempK = data.list[i].main.temp;
-            tempF = (tempK - 273.15)*(9/5) + 32;
+            tempF = (tempK - 273.15)*(9/5) + 32; // convert from kelvin to farienheight 
             tempF = tempF.toFixed(2);
             tempF = tempF + " °F" ;
             console.log(tempK, tempF);
 
-            // Save the wind data as a variable
+            // Save the wind data as a variable and format it
             wind = data.list[i].wind.speed + ' MPH';
             console.log(wind);
 
-            // Save the humidity data as a variable
+            // Save the humidity data as a variable and format it
             humidity = data.list[i].main.humidity + '%';
             console.log(humidity);
         }
