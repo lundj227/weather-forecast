@@ -14,6 +14,7 @@ var humidity;
 var currentConditionsDiv = document.querySelector('#current-conditions-display');
 var futureConditionsDiv = document.querySelector('#future-conditions-display');
 
+
 function formatUnixTime(unixTimestamp) {
     const date = new Date(unixTimestamp * 1000); // Convert to milliseconds
     const month = date.getMonth() + 1; // Months are zero-based, so add 1
@@ -145,36 +146,115 @@ function getCurrentWeather(buttonCity) {
         });
 }
 
-function displayWeatherData(cityName) {
-    var storedCityData = localStorage.getItem(cityName);
-    var cityData = storedCityData ? JSON.parse(storedCityData) : {};
-
-    // Display current weather conditions
-    var currentConditionsDisplay = document.querySelector('#current-conditions-display');
-    currentConditionsDisplay.innerHTML = `
-        <h3>${cityName.toUpperCase()} ${cityData.date}</h3><br>
-        Temp: ${cityData.tempF}<br>
-        Wind: ${cityData.wind}<br>
-        Humidity: ${cityData.humidity}<br>
-    `;
-    currentConditionsDisplay.appendChild(futureWeatherCard);
-}
-
-searchBtn.addEventListener('click', function (e) {
-    e.preventDefault();
-    city = cityInput.value;
-    getCurrentWeather();
-    getCoordinates();
-
-    if (!searchedCities.includes(city)) { // Check for duplicate city
-        searchedCities.push(city); // Add city to the array
-        var cityHistorySection = document.querySelector('#cityHistory');
+function populateCityHistory() {
+    var cityHistorySection = document.querySelector('#cityHistory');
+    searchedCities.forEach(function (city) {
         var cityButton = document.createElement('button');
+        cityButton.classList.add('city-history');
         cityButton.textContent = city.toUpperCase();
         cityButton.addEventListener('click', function () {
             getCurrentWeather(cityButton.textContent);
             getCoordinates(cityButton.textContent);
         });
         cityHistorySection.appendChild(cityButton);
+    });
+}
+
+function populateCurrentWeather(data) {
+    var tempF = data.main.temp + " °F";
+    var wind = data.wind.speed + ' MPH';
+    var humidity = data.main.humidity + '%';
+    
+    var containerDiv = document.createElement('div');
+    var pEl = document.createElement('p');
+    pEl.innerHTML = `${data.name} ${formatUnixTime(data.dt)}<br>Temp: ${tempF}<br>Wind: ${wind}<br>Humidity: ${humidity}<br>`;
+    containerDiv.appendChild(pEl);
+    
+    currentConditionsDiv.innerHTML = ''; // Clear existing content
+    currentConditionsDiv.appendChild(containerDiv);
+    
+    // Store current weather data in localStorage
+    localStorage.setItem('currentWeather', JSON.stringify(data));
+}
+
+function populateFutureWeather(data) {
+    futureConditionsDiv.innerHTML = ''; // Clear existing content
+    cityNameFromServer = data.city.name;
+
+    var futureWeatherObject = {};
+
+    for (var i = 8; i < 40; i += 8) {
+        date = formatUnixTime(data.list[i].dt);
+        tempF = data.list[i].main.temp + " °F";
+        wind = data.list[i].wind.speed + ' MPH';
+        humidity = data.list[i].main.humidity + '%';
+
+        if (!futureWeatherObject[cityNameFromServer]) {
+            futureWeatherObject[cityNameFromServer] = {};
+        }
+
+        futureWeatherObject[cityNameFromServer][date] = [tempF, wind, humidity];
+
+        var futureWeathercard = document.createElement('div');
+        futureWeathercard.classList.add('future-weather-card');
+        futureWeathercard.innerHTML = `<p> ${date} <br>Temp: ${tempF}<br>Wind: ${wind}<br>Humidity: ${humidity}<br>`;
+        futureConditionsDiv.appendChild(futureWeathercard);
+    }
+
+    // Save the future weather data in localStorage
+    saveCityData(cityNameFromServer, JSON.stringify(futureWeatherObject));
+
+    // Manually create and append the last day's future weather card
+    var dateLast = formatUnixTime(data.list[38].dt);
+    var tempFLast = data.list[38].main.temp + " °F";
+    var windLast = data.list[38].wind.speed + ' MPH';
+    var humidityLast = data.list[38].main.humidity + '%';
+
+    var futureWeathercardLast = document.createElement('div');
+    futureWeathercardLast.classList.add('future-weather-card');
+    futureWeathercardLast.innerHTML = `<p> ${dateLast} <br>Temp: ${tempFLast}<br>Wind: ${windLast}<br>Humidity: ${humidityLast}<br>`;
+    futureConditionsDiv.appendChild(futureWeathercardLast);
+}
+
+
+// Modify the function that handles the search button click
+searchBtn.addEventListener('click', function (e) {
+    e.preventDefault();
+    city = cityInput.value.trim().toLowerCase(); // Convert to lowercase and trim whitespace
+    getCurrentWeather();
+    getCoordinates();
+
+    if (!searchedCities.includes(city)) {
+        searchedCities.push(city);
+        var cityHistorySection = document.querySelector('#cityHistory');
+        var cityButton = document.createElement('button');
+        cityButton.classList.add('city-history');
+        cityButton.textContent = city.toUpperCase();
+        cityButton.addEventListener('click', function () {
+            getCurrentWeather(cityButton.textContent);
+            getCoordinates(cityButton.textContent);
+        });
+        cityHistorySection.appendChild(cityButton);
+
+        // Save the searched cities to localStorage
+        localStorage.setItem('searchedCities', JSON.stringify(searchedCities));
+    }
+});
+
+
+// Add an event listener to retrieve and populate searched cities on page load
+document.addEventListener('DOMContentLoaded', function () {
+    // Retrieve searched cities from localStorage
+    var storedSearchedCities = localStorage.getItem('searchedCities');
+    if (storedSearchedCities) {
+        searchedCities = JSON.parse(storedSearchedCities);
+        populateCityHistory(); // Populate the city history section
+    }
+
+    // Retrieve and populate current weather data from localStorage
+    var storedCurrentWeather = localStorage.getItem('currentWeather');
+    if (storedCurrentWeather) {
+        var currentWeatherData = JSON.parse(storedCurrentWeather);
+        populateCurrentWeather(currentWeatherData);
     }
 });
