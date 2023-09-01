@@ -24,8 +24,12 @@ function formatUnixTime(unixTimestamp) {
 
 var searchedCities = [];
 
-function getCoordinates() {
-    city = cityInput.value;
+function getCoordinates(buttonCity) {
+    if(buttonCity){
+        city = buttonCity;
+    }else{
+        city = cityInput.value;
+    }
     fetch('https://api.openweathermap.org/geo/1.0/direct?q=' + city + '&appid=' + APIKey)
         .then(function (response) {
             return response.json();
@@ -34,11 +38,14 @@ function getCoordinates() {
             lat = data[0].lat;
             lon = data[0].lon;
             weatherQueryURL = 'https://api.openweathermap.org/data/2.5/forecast?lat=' + lat + '&lon=' + lon + '&appid=' + APIKey + '&units=imperial';
-            getFutureWeather(); // Move getFutureWeather() call here
+            getFutureWeather(buttonCity);
         });
 }
 
-function getFutureWeather(){
+function getFutureWeather(buttonCity){
+    if(buttonCity){
+        city = buttonCity;
+    }
     fetch(weatherQueryURL)
     .then(function (response) {
         return response.json();
@@ -104,9 +111,12 @@ function getFutureWeather(){
 };
 
 
-function getCurrentWeather() {
+function getCurrentWeather(buttonCity) {
     var pEl = document.createElement('p');
     pEl.innerHTML = '';
+    if(buttonCity){
+        city = buttonCity;
+    }
     fetch('https://api.openweathermap.org/data/2.5/weather?q=' + city + '&appid=' + APIKey + '&units=imperial')
         .then(function(response){
             return response.json();
@@ -162,7 +172,8 @@ searchBtn.addEventListener('click', function (e) {
         var cityButton = document.createElement('button');
         cityButton.textContent = city.toUpperCase();
         cityButton.addEventListener('click', function () {
-            displayWeatherData(city);
+            getCurrentWeather(cityButton.textContent);
+            getCoordinates(cityButton.textContent);
         });
         cityHistorySection.appendChild(cityButton);
     }
